@@ -11,7 +11,136 @@
 <body>
     <div id="root"></div>
     <script type="text/babel">
-        // 在这里粘贴 MagicClock 组件的完整代码
+        import React, { useState, useEffect } from 'react';
+
+const MagicClock = () => {
+  const [time, setTime] = useState(new Date());
+  const [isDarkMode, setIsDarkMode] = useState(true);  // 默认为暗色模式（适用于白天）
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTime(new Date());
+    }, 1000);
+
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    setIsDarkMode(!mediaQuery.matches);  // 反转逻辑
+
+    const listener = (e) => setIsDarkMode(!e.matches);  // 反转逻辑
+    mediaQuery.addListener(listener);
+
+    return () => {
+      clearInterval(interval);
+      mediaQuery.removeListener(listener);
+    };
+  }, []);
+
+  const secondsRatio = time.getSeconds() / 60;
+  const minutesRatio = (secondsRatio + time.getMinutes()) / 60;
+  const hoursRatio = (minutesRatio + time.getHours()) / 12;
+
+  const romanNumerals = ['XII', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI'];
+
+  // 更新颜色方案，暗色用于白天，亮色用于晚上
+  const textColor = isDarkMode ? '#d0b88f' : '#4a3520';
+  const hourHandColor = isDarkMode ? '#ffd700' : '#8b4513';
+  const minuteHandColor = isDarkMode ? '#c0c0c0' : '#614e3c';
+  const dotColor = isDarkMode ? '#ffa500' : '#8b4513';  // 交换了光点颜色
+
+  return (
+    <div className="w-96 p-4 bg-transparent">
+      <svg viewBox="0 0 200 200" className="w-full h-auto">
+        <defs>
+          <radialGradient id="glowingDot" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+            <stop offset="0%" stopColor={dotColor} stopOpacity="1" />
+            <stop offset="100%" stopColor={dotColor} stopOpacity="0" />
+          </radialGradient>
+        </defs>
+
+        {romanNumerals.map((numeral, index) => {
+          const angle = (index * 30 - 90) * (Math.PI / 180);
+          const x = 100 + 80 * Math.cos(angle);
+          const y = 100 + 80 * Math.sin(angle);
+          return (
+            <text
+              key={index}
+              x={x}
+              y={y}
+              fontSize="14"
+              textAnchor="middle"
+              dominantBaseline="middle"
+              fill={textColor}
+              fontFamily="serif"
+              fontWeight="lighter"
+              letterSpacing="0.5"
+            >
+              {numeral}
+            </text>
+          );
+        })}
+
+        <line
+          x1="100"
+          y1="100"
+          x2="100"
+          y2="60"
+          transform={`rotate(${hoursRatio * 360} 100 100)`}
+          stroke={hourHandColor}
+          strokeWidth="4"
+          strokeLinecap="round"
+        />
+        
+        <line
+          x1="100"
+          y1="100"
+          x2="100"
+          y2="45"
+          transform={`rotate(${minutesRatio * 360} 100 100)`}
+          stroke={minuteHandColor}
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
+
+        <circle
+          cx={100 + 65 * Math.cos((secondsRatio * 360 - 90) * (Math.PI / 180))}
+          cy={100 + 65 * Math.sin((secondsRatio * 360 - 90) * (Math.PI / 180))}
+          r="6"
+          fill="url(#glowingDot)"
+        >
+          <animate
+            attributeName="opacity"
+            values="0.5;1;0.5"
+            dur="2s"
+            repeatCount="indefinite"
+          />
+        </circle>
+
+        <g onClick={() => setIsDarkMode(!isDarkMode)} style={{ cursor: 'pointer' }}>
+          <circle
+            cx="100"
+            cy="100"
+            r="10"
+            fill={isDarkMode ? '#4a3520' : '#d0b88f'}
+            stroke={textColor}
+            strokeWidth="1"
+          />
+          <text
+            x="100"
+            y="100"
+            textAnchor="middle"
+            dominantBaseline="central"
+            fill={textColor}
+            fontSize="14"
+            fontFamily="Arial, sans-serif"
+          >
+            {isDarkMode ? '☽' : '☀'}
+          </text>
+        </g>
+      </svg>
+    </div>
+  );
+};
+
+export default MagicClock;
         
         ReactDOM.render(<MagicClock />, document.getElementById('root'));
     </script>
